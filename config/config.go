@@ -48,7 +48,7 @@ func init() {
 
 	// setup database connection from config file
 	viper.SetConfigName("config")
-	viper.AddConfigPath("/.")
+	viper.AddConfigPath("./config")
 	err := viper.ReadInConfig()
 	if err != nil {
 		log.Println("No configuration file loaded - using defaults")
@@ -56,6 +56,7 @@ func init() {
 
 	// sets the path to the running path
 	log.Println("Loaded config from path:", viper.ConfigFileUsed())
+	//viper.SetDefault("port", "8000")
 
 	// database
 	DBUser = viper.GetString("dbuser")

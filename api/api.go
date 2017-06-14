@@ -30,7 +30,6 @@ func Database(test bool) error {
 	//gorm.Open("mysql", "user:password@/dbname?charset=utf8&parseTime=True&loc=Local")
 	db, _ = gorm.Open("mysql", ConStr)
 
-	defer db.Close()
 	return nil
 }
 
@@ -48,6 +47,9 @@ func Setup(ee **echo.Echo, test bool) error {
 
 	dbmu.Lock()
 	defer dbmu.Unlock()
+
+	clientAPI = client.NewAPI(db)
+
 	_api := e.Group("/api")
 	{
 		c1 := _api.Group("/c1")
@@ -56,6 +58,8 @@ func Setup(ee **echo.Echo, test bool) error {
 			c1.POST("/register", clientAPI.PostRegister)
 		}
 	}
+
+	//	defer db.Close()
 
 	return nil
 }

@@ -3,19 +3,18 @@ package client
 import (
 	"strconv"
 
-	"bitbucket.org/mirkorakic/engagedhits/api/response"
-	"bitbucket.org/mirkorakic/engagedhits/errors"
-	"github.com/Sirupsen/logrus"
+	"errors"
+
+	log "github.com/Sirupsen/logrus"
 	"github.com/UnnoTed/govalidator"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
-	"github.com/labstack/gommon/log"
+	"github.com/qwentic/qcrm/api/response"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var (
-	db  *gorm.DB
-	Log = logrus.New()
+	db *gorm.DB
 )
 
 // API holds all related api handlers
@@ -40,22 +39,22 @@ type Register struct {
 	Email     string `json:"email"      valid:"email,length(6|255),required"`
 	Secret    string `json:"password"   valid:"length(6|255),required"`
 
-	Admin bool `json:"admin"`
+	Admin bool `json:"admin,omitempty"`
 }
 
 // PostRegister handles post requests to register a new user account
 func (a *API) PostRegister(c echo.Context) error {
 	usr := &Register{}
-
 	// insert the body data into usr
 	if err := c.Bind(&usr); err != nil {
 		return response.Error(c, err)
 	}
 
-	Log.WithFields(logrus.Fields{
-		"first_name": usr.FirstName,
-		"password":   "secret",
-		"email":      usr.Email,
+	log.SetLevel(log.DebugLevel)
+	log.WithFields(log.Fields{
+		"FirstName": usr.FirstName,
+		"Secret":    "secret",
+		"Email":     usr.Email,
 	}).Debug("[PostRegister]: data")
 
 	// validates usr
@@ -66,7 +65,7 @@ func (a *API) PostRegister(c echo.Context) error {
 
 	// check if usr is valid
 	if !valid {
-		return response.Error(c, errors.ErrorInvalid)
+		return response.Error(c, errors.New("The data you sent is not valid"))
 	}
 
 	// check for weak password
@@ -92,10 +91,19 @@ func (a *API) PostRegister(c echo.Context) error {
 	cl.Email = usr.Email
 	//cl.Admin = usr.Admin
 
+	// checks if the email exists in the database
+	// by counting the rows found
+	ce := NewClient()
+	var count int
+	a.DB.Where("email = ?", cl.Email).Find(&ce).Count(&count)
+	if count > 0 {
+		return errors.New("Email already exists")
+	}
+
 	// insert the user into the database
 	db.Create(&cl)
-	if !db.NewRecord(&cl) {
-		return response.Error(c, "Fail to insert record")
+	if db.NewRecord(cl) {
+		return response.Error(c, errors.New("Fail to insert record"))
 	}
 
 	/*	// verification

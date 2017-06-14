@@ -19,6 +19,7 @@ func main() {
 	handleErr(err)
 
 	log.Info("[Main]: OK")
+	log.Info("Port:", config.Port)
 	e.Run(fasthttp.New(":" + config.Port))
 }
 

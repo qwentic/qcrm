@@ -3,7 +3,7 @@
 -- http://www.phpmyadmin.net
 --
 -- Host: localhost
--- Generation Time: Jun 14, 2017 at 09:23 AM
+-- Generation Time: Jun 14, 2017 at 11:49 AM
 -- Server version: 5.7.18-0ubuntu0.16.04.1-log
 -- PHP Version: 7.0.18-0ubuntu0.16.04.1
 
@@ -23,17 +23,18 @@ SET time_zone = "+00:00";
 -- --------------------------------------------------------
 
 --
--- Table structure for table `client`
+-- Table structure for table `clients`
 --
 
-CREATE TABLE `client` (
+CREATE TABLE `clients` (
   `id` int(10) UNSIGNED NOT NULL,
   `first_name` varchar(25) NOT NULL,
   `last_name` varchar(25) NOT NULL,
   `email` varchar(25) NOT NULL,
   `secret` varchar(200) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` timestamp NULL DEFAULT NULL
+  `updated_at` timestamp NULL DEFAULT NULL,
+  `deleted_at` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
@@ -41,9 +42,9 @@ CREATE TABLE `client` (
 --
 
 --
--- Indexes for table `client`
+-- Indexes for table `clients`
 --
-ALTER TABLE `client`
+ALTER TABLE `clients`
   ADD PRIMARY KEY (`id`);
 
 --
@@ -51,10 +52,10 @@ ALTER TABLE `client`
 --
 
 --
--- AUTO_INCREMENT for table `client`
+-- AUTO_INCREMENT for table `clients`
 --
-ALTER TABLE `client`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+ALTER TABLE `clients`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
