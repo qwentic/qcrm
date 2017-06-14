@@ -52,7 +52,7 @@ func Setup(ee **echo.Echo, test bool) error {
 
 	_api := e.Group("/api")
 	{
-		c1 := _api.Group("/c1")
+		c1 := _api.Group("/qw")
 		{
 			//user
 			c1.POST("/register", clientAPI.PostRegister)
