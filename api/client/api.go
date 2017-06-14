@@ -155,3 +155,7 @@ func (a *API) PostRegister(c echo.Context) error {
 		"id": strconv.FormatInt(int64(cl.ID), 10),
 	})
 }
+
+func (a *API) PostLogin(c echo.Context) error {
+	return nil
+}

@@ -7,14 +7,15 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/labstack/echo"
 	"github.com/qwentic/qcrm/api/client"
+	"github.com/qwentic/qcrm/api/contact"
 	"github.com/qwentic/qcrm/config"
 )
 
 var (
-	db        *gorm.DB
-	clientAPI *client.API
-
-	dbmu = &sync.Mutex{}
+	db         *gorm.DB
+	clientAPI  *client.API
+	contactAPI *contact.API
+	dbmu       = &sync.Mutex{}
 )
 
 // Database connects to the database specified through env vars
@@ -49,13 +50,17 @@ func Setup(ee **echo.Echo, test bool) error {
 	defer dbmu.Unlock()
 
 	clientAPI = client.NewAPI(db)
-
+	contactAPI = contact.NewAPI(db)
 	_api := e.Group("/api")
 	{
 		c1 := _api.Group("/qw")
 		{
 			//user
 			c1.POST("/register", clientAPI.PostRegister)
+			c1.POST("/login", clientAPI.PostLogin)
+			c1.POST("/contact", contactAPI.PostContact)
+			c1.PUT("/contact/:id", contactAPI.PutContact)
+			c1.GET("/contact/:id", contactAPI.GetContact)
 		}
 	}
 
