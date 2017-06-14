@@ -119,3 +119,17 @@ func Success(c echo.Context, data interface{}) error {
 
 	return c.JSON(http.StatusOK, data)
 }
+
+func SuccessCreated(c echo.Context, data interface{}) error {
+	if data == nil {
+		data = map[string]interface{}{}
+	}
+
+	switch data.(type) {
+	case map[string]interface{}:
+		data.(map[string]interface{})["success"] = true
+		data.(map[string]interface{})["created"] = true
+	}
+
+	return c.JSON(http.StatusCreated, data)
+}

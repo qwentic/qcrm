@@ -6,8 +6,8 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/labstack/echo"
+	"github.com/qwentic/qcrm/api/client"
 	"github.com/qwentic/qcrm/config"
-	"github.com/stripe/stripe-go/client"
 )
 
 var (
@@ -53,7 +53,7 @@ func Setup(ee **echo.Echo, test bool) error {
 		c1 := _api.Group("/c1")
 		{
 			//user
-			c1.POST("/register")
+			c1.POST("/register", clientAPI.PostRegister)
 		}
 	}
 
