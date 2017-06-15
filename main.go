@@ -7,6 +7,7 @@ import (
 	"github.com/labstack/echo/engine/fasthttp"
 	"github.com/labstack/gommon/log"
 	"github.com/qwentic/qcrm/api"
+	"github.com/qwentic/qcrm/api/contact"
 	"github.com/qwentic/qcrm/config"
 )
 
@@ -15,9 +16,11 @@ func main() {
 	e := echo.New()
 	e.SetDebug(true)
 
-	err := api.Setup(&e, false)
+	err := api.Setup(&e)
 	handleErr(err)
 
+	err = contact.Init(api.GetDB())
+	handleErr(err)
 	log.Info("[Main]: OK")
 	log.Info("Port:", config.Port)
 	e.Run(fasthttp.New(":" + config.Port))

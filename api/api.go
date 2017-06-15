@@ -7,6 +7,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/labstack/echo"
 	"github.com/qwentic/qcrm/api/client"
+	"github.com/qwentic/qcrm/api/company"
 	"github.com/qwentic/qcrm/api/contact"
 	"github.com/qwentic/qcrm/config"
 )
@@ -19,7 +20,7 @@ var (
 )
 
 // Database connects to the database specified through env vars
-func Database(test bool) error {
+func Database() error {
 	// check if it already is connected
 	if db != nil {
 		return nil
@@ -37,11 +38,11 @@ func Database(test bool) error {
 // Setup initiates the database connection and
 // send it to each sub-api
 // it also creates all routes' handlers
-func Setup(ee **echo.Echo, test bool) error {
+func Setup(ee **echo.Echo) error {
 
 	e := *ee
 
-	err := Database(test)
+	err := Database()
 	if err != nil {
 		return err
 	}
@@ -51,6 +52,7 @@ func Setup(ee **echo.Echo, test bool) error {
 
 	clientAPI = client.NewAPI(db)
 	contactAPI = contact.NewAPI(db)
+	companyAPI := company.NewAPI(db)
 	_api := e.Group("/api")
 	{
 		c1 := _api.Group("/qw")
@@ -61,10 +63,19 @@ func Setup(ee **echo.Echo, test bool) error {
 			c1.POST("/contact", contactAPI.PostContact)
 			c1.PUT("/contact/:id", contactAPI.PutContact)
 			c1.GET("/contact/:id", contactAPI.GetContact)
+			c1.POST("/company", companyAPI.PostCompany)
 		}
 	}
 
 	//	defer db.Close()
 
 	return nil
+}
+
+func GetDB() *gorm.DB {
+	if db == nil {
+		_ = Database()
+	}
+
+	return db
 }

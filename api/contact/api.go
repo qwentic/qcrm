@@ -8,6 +8,7 @@ import (
 	"github.com/UnnoTed/govalidator"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
+	"github.com/qwentic/qcrm/api/industry"
 	"github.com/qwentic/qcrm/api/response"
 )
 
@@ -28,6 +29,56 @@ func NewAPI(d *gorm.DB) *API {
 
 }
 
+// Init initiates the process
+func Init(d *gorm.DB) error {
+	log.SetLevel(log.DebugLevel)
+	log.Debug("[Algorithm.Init]: Initiating for saving industries to database...")
+
+	var err error
+
+	if d != nil {
+		log.Debug("[Algorithm.Init]: MySQL: OK")
+		db = d
+	} else {
+		return errors.New("No db found")
+	}
+
+	// industries
+	err = PreDefinedIndustries()
+	if err != nil {
+		return err
+	}
+
+	log.Debug("[Algorithm.Init]: Init for industries insertion Done .")
+	return nil
+}
+
+func PreDefinedIndustries() error {
+	//create transaction
+	tx := db.Begin()
+
+	for _, indus := range industry.All {
+		_indus := industry.NewIndustry()
+		indb := db.Where("name = ?", indus.Name).First(&_indus)
+		if indb.Error != nil && !indb.RecordNotFound() {
+			return indb.Error
+		}
+		//ignore when exists
+		if !indb.RecordNotFound() {
+			continue
+		}
+		if err := tx.Create(&indus).Error; err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	// insert industries into the db
+	tx.Commit()
+
+	return nil
+}
+
 //Contactinfo struct to hold post request for contact
 type Contactinfo struct {
 	FirstName string `json:"first_name,omitempty" valid:"alphanum,length(2|100),required"`
@@ -38,7 +89,7 @@ type Contactinfo struct {
 
 //PostContact handles post request to create new contact
 func (a *API) PostContact(c echo.Context) error {
-	cc := &Contactinfo{}
+	cc := &CSInfo{}
 	if err := c.Bind(&cc); err != nil {
 		return response.Error(c, err)
 	}
@@ -55,30 +106,45 @@ func (a *API) PostContact(c echo.Context) error {
 		return response.Error(c, err)
 	}
 
-	// check if usr is valid
+	// check if cc is valid
 	if !valid {
 		return response.Error(c, errors.New("The data you sent is not valid"))
 	}
 
 	//copy cc data into a new contact
-	contact := NewContact()
+	/*	contact := NewContact()
 
-	contact.FirstName = cc.FirstName
-	contact.LastName = cc.LastName
-	contact.Email = cc.Email
-	contact.Phone = cc.Phone
-	//check if the email exist in the database by counting the rows count
+		contact.FirstName = cc.FirstName
+		contact.LastName = cc.LastName
+		contact.Email = cc.Email
+		contact.Phone = cc.Phone
+		contact.CompanyID = cc.CompanyID
+	*/ //check if the email exist in the database by counting the rows count
 	ct := NewContact()
 	var count int
-	a.DB.Where("email = ?", contact.Email).Find(&ct).Count(&count)
+	a.DB.Where("email = ?", cc.Email).Find(&ct).Count(&count)
 	if count > 0 {
 		return errors.New("Email already exists")
 	}
 
-	// insert the user into the database
-	db.Create(&contact)
-	if db.NewRecord(contact) {
+	// insert the contact into the database
+	db.Create(&cc.Contact)
+	if db.NewRecord(cc.Contact) {
 		return response.Error(c, errors.New("Fail to insert record"))
+	}
+	tx := a.DB.Begin()
+	//insert sites url
+	if cc.Site != nil {
+		for _, s := range cc.Site {
+			s.ContactID = cc.ID
+			if err := tx.Create(&s).Error; err != nil {
+				return response.Error(c, err)
+			}
+		}
+		err := tx.Commit().Error
+		if err != nil {
+			return response.Error(c, err)
+		}
 	}
 
 	return response.SuccessCreated(c, map[string]interface{}{
