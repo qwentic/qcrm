@@ -67,7 +67,7 @@ func Setup(ee **echo.Echo) error {
 			{
 				// auth
 				_contact.Use(client.JWT([]byte(config.JWTSecret)))
-				_contact.Use(clientAPI.Middleware(false))
+				//	_contact.Use(clientAPI.Middleware(false))
 
 				_contact.POST("/contact", contactAPI.PostContact)
 				_contact.PUT("/contact/:id", contactAPI.PutContact)

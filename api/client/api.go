@@ -1,17 +1,14 @@
 package client
 
 import (
-	"net/http"
 	"strconv"
 
 	"errors"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/UnnoTed/govalidator"
-	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
-	"github.com/labstack/echo/middleware"
 	"github.com/qwentic/qcrm/api/response"
 	"github.com/qwentic/qcrm/api/util"
 	"golang.org/x/crypto/bcrypt"
@@ -253,48 +250,4 @@ func (a *API) PostLogin(c echo.Context) error {
 		"token": tokenString,
 		"id":    strconv.FormatInt(util.Obfuscate(cl.ID), 10),
 	})
-}
-
-// Middleware handles JWT tokens
-func (a *API) Middleware(isTest bool) func(echo.HandlerFunc) echo.HandlerFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if c.Get(middleware.DefaultJWTConfig.ContextKey) == nil {
-				return response.ErrorWithStatus(c,
-					errors.New("You're not authorized to access this page"),
-					http.StatusUnauthorized)
-			}
-
-			usr := c.Get(middleware.DefaultJWTConfig.ContextKey).(*jwt.Token).Claims.(*UserToken)
-
-			// check the issuer
-			if usr.Issuer != issuer {
-				return response.Error(c, errors.New("Invalid token"))
-			}
-
-			// checks if expiration time is in 5-30 minutes
-			if WillTokenExpire(usr.ExpiresAt) {
-				/*_, err := EndTrial(usr.UID)
-				if err != nil {
-					return response.Error(c, err)
-				}*/
-
-				// create a new token
-				tokenString, err := CreateToken(usr.UID, false)
-				if err != nil {
-					return response.Error(c, err)
-				}
-
-				// set the new token to be sent in the next response
-				c.Set("token", tokenString)
-			}
-
-			// call the next handler
-			if err := next(c); err != nil {
-				c.Error(err)
-			}
-
-			return nil
-		}
-	}
 }
