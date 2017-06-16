@@ -10,13 +10,13 @@ import (
 )
 
 var (
-	DBUser  string
-	DBPass  string
-	DBName  string
-	DBParam string
-	//EncryptionKey     []byte
+	DBUser            string
+	DBPass            string
+	DBName            string
+	DBParam           string
+	EncryptionKey     []byte
 	JWTExpirationTime time.Duration
-	//JWTSecret         []byte
+	JWTSecret         []byte
 
 	//SendInBlue           string
 	Port string
@@ -64,9 +64,9 @@ func init() {
 	DBName = viper.GetString("dbname")
 	DBParam = viper.GetString("dbparam")
 	// encryption / secret
-	/*	EncryptionKey = []byte(viper.GetString("encryption_key"))
-		JWTSecret = []byte(viper.GetString("jwt_secret"))
-	*/
+
+	EncryptionKey = []byte(viper.GetString("encryption_key"))
+	JWTSecret = []byte(viper.GetString("jwt_secret"))
 	// jwt
 	jet := viper.GetInt("jwt_expiration_time")
 	JWTExpirationTime = time.Duration(jet) * time.Hour

@@ -1,16 +1,24 @@
 package client
 
 import (
+	"net/http"
 	"strconv"
 
 	"errors"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/UnnoTed/govalidator"
+	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/qwentic/qcrm/api/response"
+	"github.com/qwentic/qcrm/api/util"
 	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	issuer = "auth.service"
 )
 
 var (
@@ -156,6 +164,137 @@ func (a *API) PostRegister(c echo.Context) error {
 	})
 }
 
+//PostLogin handles post requests to login a existing user
 func (a *API) PostLogin(c echo.Context) error {
-	return nil
+	var usr = &struct {
+		Email  string `json:"email"      valid:"email,length(6|255),required"`
+		Secret string `json:"password"   valid:"length(6|255),required"`
+	}{}
+
+	if err := c.Bind(usr); err != nil {
+		return response.Error(c, err)
+	}
+
+	log.SetLevel(log.DebugLevel)
+	log.WithField("email", usr.Email).Debug("[PostLogin]: data")
+
+	// validates usr
+	valid, err := govalidator.ValidateStruct(usr)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	// check if usr is valid
+	if !valid {
+		return response.Error(c, errors.New("the data you sent is not valid"))
+	}
+
+	// get the user from the database usr's email
+	cl := NewClient()
+	res := a.DB.Where("email = ?", usr.Email).First(&cl)
+	if res.Error != nil {
+		return response.Error(c, errors.New("Your email or password is wrong"))
+	}
+
+	// compare the password
+	err = bcrypt.CompareHashAndPassword([]byte(cl.Secret), []byte(usr.Secret))
+	if err != nil {
+		// wrong password
+		return response.Error(c, errors.New("Your email or password is wrong"))
+	}
+
+	// encrypt the uuid and create a new token
+	tokenString, err := CreateToken(cl.ID, true)
+	if err != nil {
+		return response.Error(c, err)
+	}
+
+	// remove port from the remote address
+	/*ip := c.Request().RemoteAddress()
+	s := strings.Split(ip, ":")
+	ip = s[0]
+
+	// get user's ip
+	req := goreq.Request{
+		Method: "POST",
+		Uri:    "http://ip-api.com/json/" + ip,
+	}
+
+	// get browser and kind of device from user agent
+	_, _, _, _, _, deviceType, _ := uasurfer.Parse(c.Request().UserAgent())
+	var accessFrom string
+
+	// chose device type
+	switch deviceType {
+	case uasurfer.DevicePhone, uasurfer.DeviceTablet:
+		accessFrom = "android"
+	default:
+		accessFrom = "desktop"
+	}
+
+	ss := &session.Session{
+		AccessFrom:  accessFrom,
+		Token:       tokenString,
+		ClientID:    cl.ID,
+		Valid:       true,
+		TimeCreated: time.Now().Unix(),
+		TimeExpires: time.Now().Add(48 * time.Hour).Unix(),
+		MachineID:   c.Request().UserAgent(),
+		MachineIP:   ip,
+	}
+
+	err = ss.Create()
+	if err != nil {
+		return response.Error(c, err)
+	}
+	*/
+	// respond ok
+	return response.Success(c, map[string]interface{}{
+		"token": tokenString,
+		"id":    strconv.FormatInt(util.Obfuscate(cl.ID), 10),
+	})
+}
+
+// Middleware handles JWT tokens
+func (a *API) Middleware(isTest bool) func(echo.HandlerFunc) echo.HandlerFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			if c.Get(middleware.DefaultJWTConfig.ContextKey) == nil {
+				return response.ErrorWithStatus(c,
+					errors.New("You're not authorized to access this page"),
+					http.StatusUnauthorized)
+			}
+
+			usr := c.Get(middleware.DefaultJWTConfig.ContextKey).(*jwt.Token).Claims.(*UserToken)
+
+			// check the issuer
+			if usr.Issuer != issuer {
+				return response.Error(c, errors.New("Invalid token"))
+			}
+
+			// checks if expiration time is in 5-30 minutes
+			if WillTokenExpire(usr.ExpiresAt) {
+				/*_, err := EndTrial(usr.UID)
+				if err != nil {
+					return response.Error(c, err)
+				}*/
+
+				// create a new token
+				tokenString, err := CreateToken(usr.UID, false)
+				if err != nil {
+					return response.Error(c, err)
+				}
+
+				// set the new token to be sent in the next response
+				c.Set("token", tokenString)
+			}
+
+			// call the next handler
+			if err := next(c); err != nil {
+				c.Error(err)
+			}
+
+			return nil
+		}
+	}
 }

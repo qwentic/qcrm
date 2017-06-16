@@ -1,6 +1,9 @@
 package client
 
-import "github.com/jinzhu/gorm"
+import (
+	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/jinzhu/gorm"
+)
 
 //Client is the struct that holds client information
 type Client struct {
@@ -15,4 +18,9 @@ type Client struct {
 func NewClient() *Client {
 	c := new(Client)
 	return c
+}
+
+type UserToken struct {
+	UID string `json:"id"`
+	jwt.StandardClaims
 }

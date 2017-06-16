@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strconv"
 
-	log "github.com/Sirupsen/logrus"
+	Log "github.com/Sirupsen/logrus"
 	"github.com/UnnoTed/govalidator"
 	"github.com/jinzhu/gorm"
 	"github.com/labstack/echo"
@@ -31,13 +31,13 @@ func NewAPI(d *gorm.DB) *API {
 
 // Init initiates the process
 func Init(d *gorm.DB) error {
-	log.SetLevel(log.DebugLevel)
-	log.Debug("[Algorithm.Init]: Initiating for saving industries to database...")
+	Log.SetLevel(Log.DebugLevel)
+	Log.Debug("[Algorithm.Init]: Initiating for saving industries to database...")
 
 	var err error
 
 	if d != nil {
-		log.Debug("[Algorithm.Init]: MySQL: OK")
+		Log.Debug("[Algorithm.Init]: MySQL: OK")
 		db = d
 	} else {
 		return errors.New("No db found")
@@ -49,7 +49,7 @@ func Init(d *gorm.DB) error {
 		return err
 	}
 
-	log.Debug("[Algorithm.Init]: Init for industries insertion Done .")
+	Log.Debug("[Algorithm.Init]: Init for industries insertion Done .")
 	return nil
 }
 
@@ -89,12 +89,24 @@ type Contactinfo struct {
 
 //PostContact handles post request to create new contact
 func (a *API) PostContact(c echo.Context) error {
+	/*userID, err := util.GetUserID(c)
+	if err != nil {
+		return response.Error(c, err)
+	}
+	//get name of responsible person to create contact
+	cl := client.NewClient()
+
+	resdb := a.DB.Where("id = ?", userID).First(&cl)
+	if resdb.Error != nil && !resdb.RecordNotFound() {
+		return response.Error(c, resdb.Error)
+	}
+	*/
 	cc := &CSInfo{}
 	if err := c.Bind(&cc); err != nil {
 		return response.Error(c, err)
 	}
-	log.SetLevel(log.DebugLevel)
-	log.WithFields(log.Fields{
+	Log.SetLevel(Log.DebugLevel)
+	Log.WithFields(Log.Fields{
 		"FirstName": cc.FirstName,
 		"LastName":  cc.LastName,
 		"Email":     cc.Email,

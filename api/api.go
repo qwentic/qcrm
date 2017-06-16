@@ -6,6 +6,7 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/qwentic/qcrm/api/client"
 	"github.com/qwentic/qcrm/api/company"
 	"github.com/qwentic/qcrm/api/contact"
@@ -53,6 +54,8 @@ func Setup(ee **echo.Echo) error {
 	clientAPI = client.NewAPI(db)
 	contactAPI = contact.NewAPI(db)
 	companyAPI := company.NewAPI(db)
+	e.Use(middleware.Logger())
+
 	_api := e.Group("/api")
 	{
 		c1 := _api.Group("/qw")
@@ -60,10 +63,17 @@ func Setup(ee **echo.Echo) error {
 			//user
 			c1.POST("/register", clientAPI.PostRegister)
 			c1.POST("/login", clientAPI.PostLogin)
-			c1.POST("/contact", contactAPI.PostContact)
-			c1.PUT("/contact/:id", contactAPI.PutContact)
-			c1.GET("/contact/:id", contactAPI.GetContact)
-			c1.POST("/company", companyAPI.PostCompany)
+			_contact := _api.Group("/qw")
+			{
+				// auth
+				_contact.Use(client.JWT([]byte(config.JWTSecret)))
+				_contact.Use(clientAPI.Middleware(false))
+
+				_contact.POST("/contact", contactAPI.PostContact)
+				_contact.PUT("/contact/:id", contactAPI.PutContact)
+				_contact.GET("/contact/:id", contactAPI.GetContact)
+				_contact.POST("/company", companyAPI.PostCompany)
+			}
 		}
 	}
 
