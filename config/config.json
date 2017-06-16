@@ -1,0 +1,11 @@
+{
+    "dbname": "qcrm",
+    "dbuser": "root",
+    "dbpass": "password",
+    "dbparam": "charset=utf8&parseTime=True&loc=Local",
+    "port": "8000",
+    "encryption_key": "abcedfghijklmnopqrstuvwxyzabcdef",
+    "jwt_secret": "abcdefghij",
+    "jwt_expiration_time": 24
+
+}
